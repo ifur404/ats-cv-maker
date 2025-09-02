@@ -1,904 +1,307 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pembuat CV ATS-Friendly</title>
-  <style>
-    :root{
-      --bg:#0f1220;
-      --panel:#161a2e;
-      --panel-2:#1c2140;
-      --text:#e7ebff;
-      --muted:#aab3d6;
-      --accent:#6ad3ff;
-      --accent-2:#a96aff;
-      --ok:#2cd881;
-      --warn:#ffb84d;
-      --bad:#ff6b6b;
-      --gap:14px;
-      --radius:12px;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:var(--sans);
-      color:var(--text);
-      background:
-        radial-gradient(1200px 600px at 80% -10%, rgba(106,211,255,.15), transparent 60%),
-        radial-gradient(900px 500px at -10% 110%, rgba(169,106,255,.12), transparent 60%),
-        linear-gradient(180deg, #0d1020 0%, #0c1022 100%);
-      background-color:var(--bg);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS CV Maker - LLM Benchmark</title>
+    <style>
+        :root {
+            --bg: #0f1220;
+            --panel: #161a2e;
+            --panel-2: #1c2140;
+            --text: #e7ebff;
+            --muted: #aab3d6;
+            --accent: #6ad3ff;
+            --accent-2: #a96aff;
+            --ok: #2cd881;
+            --warn: #ffb84d;
+            --border: rgba(255,255,255,0.08);
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background: 
+                radial-gradient(1200px 600px at 80% -10%, rgba(106,211,255,.15), transparent 60%),
+                radial-gradient(900px 500px at -10% 110%, rgba(169,106,255,.12), transparent 60%),
+                linear-gradient(180deg, #0d1020 0%, #0c1022 100%);
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
 
-    header{
-      padding:24px clamp(16px,4vw,32px) 12px;
-      display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-    }
-    .logo{
-      width:44px;height:44px;border-radius:10px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      display:grid;place-items:center;
-      color:#0b1125;font-weight:800;
-      box-shadow: 0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.2);
-      letter-spacing:.5px;
-    }
-    .title h1{margin:0;font-size:20px}
-    .title p{margin:2px 0 0;color:var(--muted);font-size:12px}
-    .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-    button, .btn{
-      appearance:none;border:none;
-      background:linear-gradient(180deg, var(--panel), var(--panel-2));
-      color:var(--text);padding:10px 14px;border-radius:10px;
-      box-shadow: 0 6px 18px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.06);
-      cursor:pointer;font-weight:600
-    }
-    button:hover{filter:brightness(1.06)}
-    button:active{transform:translateY(1px)}
-    .btn-accent{
-      background: linear-gradient(180deg, #67d2ff, #47baf1);
-      color:#042034;
-    }
-    .container{
-      display:grid;
-      grid-template-columns: 1.05fr .95fr;
-      gap: clamp(14px, 3vw, 24px);
-      padding: 0 clamp(16px,4vw,32px) 24px;
-    }
-    @media (max-width: 980px){
-      .container{grid-template-columns:1fr}
-    }
+        header {
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+        }
 
-    .panel{
-      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius: var(--radius);
-      box-shadow: 0 20px 60px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.02);
-      overflow: clip;
-    }
-    .panel > header{
-      padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
-    }
-    .panel > header h2{font-size:14px;margin:0;letter-spacing:.6px;text-transform:uppercase;color:#d9e2ff}
-    .panel .body{padding:16px}
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            display: grid;
+            place-items: center;
+            color: #0b1125;
+            font-weight: 800;
+            font-size: 24px;
+            box-shadow: 0 12px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.2);
+            margin: 0 auto 2rem;
+        }
 
-    .form-grid{
-      display:grid;gap:12px;
-      grid-template-columns: repeat(12, 1fr);
-    }
-    .form-row{display:flex;gap:10px}
-    .form-item{
-      grid-column: span 12;
-      display:flex;flex-direction:column;gap:6px;
-    }
-    .form-item.inline{flex-direction:row;align-items:center}
-    .form-item label{
-      font-size:12px;color:var(--muted);letter-spacing:.3px
-    }
-    input[type="text"], input[type="email"], input[type="url"], input[type="tel"], input[type="date"], textarea, select{
-      width:100%;
-      background: linear-gradient(180deg, #0f1430, #0c132a);
-      border:1px solid rgba(255,255,255,.08);
-      color:var(--text);
-      padding:10px 12px;border-radius:10px;outline:none;
-      font-size:14px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 8px 24px rgba(0,0,0,.3);
-    }
-    textarea{min-height:84px;resize:vertical}
-    .two{grid-column:span 6}
-    .three{grid-column:span 4}
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin: 0 0 1rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-    .section-title{
-      font-size:12px;color:#c9d5ff;text-transform:uppercase;letter-spacing:.6px;
-      margin: 16px 0 8px;
-      padding-top:6px;border-top:1px dashed rgba(255,255,255,.1)
-    }
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--muted);
+            margin: 0 0 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
-    .mini-list{display:flex;flex-direction:column;gap:10px}
-    .mini{display:grid;grid-template-columns: 1fr auto;gap:8px;align-items:center}
-    .mini input{height:36px}
-    .mini .row{display:flex;gap:8px}
-    .mini .row > *{flex:1}
+        .implementations {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
 
-    .tool-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .chip{
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.09);
-      color:#e9efff;padding:6px 10px;border-radius:999px;font-size:12px
-    }
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,.35);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
 
-    /* Preview CV */
-    .cv{
-      background: #ffffff;
-      color:#1d2433;
-      width:100%;
-      min-height:300mm;
-      aspect-ratio: 1/1.414; /* A4 */
-      margin: 16px auto;
-      box-shadow: 0 20px 60px rgba(0,0,0,.35);
-      border-radius: 10px;
-      overflow: hidden;
-      display:grid;
-      grid-template-rows: auto 1fr;
-      font-family: "Inter", Arial, Helvetica, sans-serif;
-    }
-    .cv header{
-      background: linear-gradient(90deg, #e9f7ff, #f7ecff);
-      color:#0e1a2b;
-      padding: 22px 26px;
-      display:grid;
-      grid-template-columns: 1fr auto;
-      align-items:center;
-      gap:10px;
-    }
-    .cv .id h1{margin:0;font-size:26px}
-    .cv .id p{margin:2px 0;color:#445}
-    .cv .badge{
-      width:78px;height:78px;border-radius:12px;background:#fff;border:1px solid #e6eaf2;
-      display:grid;place-items:center;overflow:hidden;font-weight:700;color:#334;
-      image-rendering: pixelated;
-    }
-    .cv main{
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:18px;
-      padding: 18px 26px 28px;
-    }
-    .cv section h3{
-      margin:0 0 8px;font-size:14px;letter-spacing:.6px;color:#252b39;text-transform:uppercase
-    }
-    .cv .block{margin-bottom:14px}
-    .cv .item{margin-bottom:10px}
-    .cv .item h4{margin:0 0 2px;font-size:13px}
-    .cv .sub{color:#445; font-size:12px}
-    .cv ul{margin:6px 0 0 16px;padding:0}
-    .cv li{margin:2px 0;font-size:12px}
-    .cv .meta{font-size:12px;color:#555}
-    .cv .skills{display:flex;gap:8px;flex-wrap:wrap}
-    .cv .skill{background:#f2f5fb;border:1px solid #e6eaf2;border-radius:999px;padding:6px 10px;font-size:12px}
-    .cv .split{display:flex;gap:10px;flex-wrap:wrap}
-    .cv .contact{font-size:12px;color:#333}
-    .cv .contact div{margin:2px 0}
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 30px 80px rgba(0,0,0,.45);
+        }
 
-    .bar{
-      height:8px;border-radius:6px;background:#e9eef7;overflow:hidden;border:1px solid #dbe2f0
-    }
-    .bar > i{display:block;height:100%;background:linear-gradient(90deg,#67d2ff,#a96aff)}
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
+        }
 
-    .score-wrap{
-      display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px
-    }
-    .score{
-      font: 700 22px var(--mono); color:var(--ok);
-    }
-    .score.bad{color:var(--bad)}
-    .score.med{color:var(--warn)}
-    .tips{color:var(--muted);font-size:13px;margin-top:8px}
-    .tips ul{margin:8px 0 0 18px;padding:0}
-    .tips li{margin:6px 0}
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
 
-    .footer-note{
-      text-align:center;color:var(--muted);font-size:12px;margin:20px 0 30px
-    }
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+        }
 
-    .kbd{
-      font-family:var(--mono);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-      padding:1px 6px;border-radius:6px
-    }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
 
-    @media print{
-      body{background:#fff}
-      header, .panel:not(.preview), .footer-note{display:none}
-      .container{padding:0}
-      .cv{box-shadow:none;margin:0;border-radius:0}
-    }
-  </style>
-  <meta name="description" content="Aplikasi pembuat CV ATS-friendly: format sederhana, kata kunci, dan ekspor PDF.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='18' fill='%2367d2ff'/%3E%3Cpath d='M26 66h44v6H26zM26 24h44v6H26zM26 36h28v6H26zM26 48h36v6H26z' fill='%23042134'/%3E%3C/svg%3E">
-  <script type="importmap">
-    {
-      "imports": {
-        "jszip": "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"
-      }
-    }
-  </script>
+        .card-subtitle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .card-description {
+            color: var(--muted);
+            margin: 1rem 0 2rem;
+            line-height: 1.7;
+        }
+
+        .features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem;
+        }
+
+        .features li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.75rem 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .check {
+            color: var(--ok);
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(180deg, var(--accent), #47baf1);
+            color: #042034;
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(106, 211, 255, 0.3);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(106, 211, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(180deg, var(--panel), var(--panel-2));
+            color: var(--text);
+            box-shadow: 0 8px 24px rgba(0,0,0,.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 12px 32px rgba(0,0,0,.4);
+        }
+
+
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+
+        @media (max-width: 768px) {
+            .implementations {
+                grid-template-columns: 1fr;
+                padding: 0 1rem;
+            }
+            
+            header {
+                padding: 2rem 1rem 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <div class="logo">CV</div>
-    <div class="title">
-      <h1>Pembuat CV ATS-Friendly</h1>
-      <p>Format sederhana, mudah dipindai ATS, dan siap ekspor PDF.</p>
-    </div>
-    <div class="actions">
-      <button id="btn-load-sample" title="Muat data contoh">Muat Contoh</button>
-      <button id="btn-clear" title="Bersihkan form">Bersihkan</button>
-      <button id="btn-download-txt">Unduh .TXT (ATS)</button>
-      <button id="btn-print" class="btn-accent">Cetak / PDF</button>
-    </div>
-  </header>
+    <header>
+        <div class="logo">CV</div>
+        <h1>ATS CV Maker Benchmark</h1>
+        <p class="subtitle">
+            Compare different Large Language Model implementations of an ATS-friendly resume builder. 
+            Each implementation showcases unique approaches to the same problem.
+        </p>
+    </header>
 
-  <div class="container">
-    <section class="panel form">
-      <header><h2>Data CV</h2></header>
-      <div class="body">
-        <div class="form-grid" id="form-grid">
-          <div class="form-item two">
-            <label>Nama Lengkap</label>
-            <input id="name" type="text" placeholder="Nama Lengkap">
-          </div>
-          <div class="form-item two">
-            <label>Jabatan yang Dilamar</label>
-            <input id="headline" type="text" placeholder="Contoh: Software Engineer">
-          </div>
-          <div class="form-item three">
-            <label>Email</label>
-            <input id="email" type="email" placeholder="nama@email.com">
-          </div>
-          <div class="form-item three">
-            <label>Telepon</label>
-            <input id="phone" type="tel" placeholder="+62 8xx-xxxx-xxxx">
-          </div>
-          <div class="form-item three">
-            <label>Lokasi</label>
-            <input id="location" type="text" placeholder="Kota, Negara">
-          </div>
-          <div class="form-item three">
-            <label>LinkedIn</label>
-            <input id="linkedin" type="url" placeholder="https://linkedin.com/in/username">
-          </div>
-          <div class="form-item three">
-            <label>Portofolio / Website</label>
-            <input id="website" type="url" placeholder="https://contoh.site">
-          </div>
-          <div class="form-item" style="grid-column: span 12;">
-            <label>Ringkasan Profesional (3–5 kalimat, keyword relevan)</label>
-            <textarea id="summary" placeholder="Ringkas pengalaman, keahlian utama, dampak, dan tujuan karier."></textarea>
-          </div>
-
-          <div class="section-title" style="grid-column: span 12;">Pengalaman Kerja</div>
-          <div class="form-item" style="grid-column: span 12;">
-            <div id="exp-list" class="mini-list"></div>
-            <div class="tool-row">
-              <button id="btn-add-exp">+ Tambah Pengalaman</button>
+    <main class="implementations">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">🤖</div>
+                <div>
+                    <h3 class="card-title">Claude Implementation</h3>
+                    <p class="card-subtitle">Anthropic's Claude</p>
+                </div>
             </div>
-          </div>
+            <p class="card-description">
+                Clean, modern ATS CV builder with professional design and real-time scoring system. 
+                Features dynamic form management and comprehensive export options.
+            </p>
+            <ul class="features">
+                <li><span class="check">✓</span> Real-time ATS scoring (0-100)</li>
+                <li><span class="check">✓</span> Dynamic form lists (add/remove)</li>
+                <li><span class="check">✓</span> Professional CV preview</li>
+                <li><span class="check">✓</span> Blue/purple gradient theme</li>
+                <li><span class="check">✓</span> PDF/TXT export options</li>
+            </ul>
+            <a href="claude.html" class="btn">View Implementation</a>
+        </div>
 
-          <div class="section-title" style="grid-column: span 12;">Pendidikan</div>
-          <div class="form-item" style="grid-column: span 12;">
-            <div id="edu-list" class="mini-list"></div>
-            <div class="tool-row">
-              <button id="btn-add-edu">+ Tambah Pendidikan</button>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">🌅</div>
+                <div>
+                    <h3 class="card-title">Horizon Beta Implementation</h3>
+                    <p class="card-subtitle">Indonesian-Optimized Version</p>
+                </div>
             </div>
-          </div>
-
-          <div class="section-title" style="grid-column: span 12;">Keterampilan & Alat</div>
-          <div class="form-item" style="grid-column: span 12;">
-            <div id="skill-list" class="mini-list"></div>
-            <div class="tool-row">
-              <button id="btn-add-skill">+ Tambah Skill</button>
-              <button id="btn-suggest" title="Saran kata kunci berdasarkan job title">Saran Kata Kunci</button>
-            </div>
-          </div>
-
-          <div class="section-title" style="grid-column: span 12;">Prestasi / Sertifikasi</div>
-          <div class="form-item" style="grid-column: span 12;">
-            <div id="ach-list" class="mini-list"></div>
-            <div class="tool-row">
-              <button id="btn-add-ach">+ Tambah Prestasi</button>
-            </div>
-          </div>
+            <p class="card-description">
+                Indonesian-language implementation with localized content, 
+                comprehensive form handling, and professional CV preview system.
+            </p>
+            <ul class="features">
+                <li><span class="check">✓</span> Indonesian language interface</li>
+                <li><span class="check">✓</span> Dynamic form management</li>
+                <li><span class="check">✓</span> Professional CV preview</li>
+                <li><span class="check">✓</span> Export to PDF and TXT</li>
+                <li><span class="check">✓</span> Local data persistence</li>
+            </ul>
+            <a href="horizon-beta.html" class="btn">View Implementation</a>
         </div>
 
-        <div class="section-title" style="grid-column: span 12;">Penilaian ATS</div>
-        <div class="score-wrap">
-          <div id="score" class="score">0</div>
-          <div>
-            <div id="score-desc">Lengkapi data untuk meningkatkan skor keterbacaan ATS.</div>
-            <div class="tips">
-              Tips cepat:
-              <ul id="tips-list">
-                <li>Gunakan format tanggal konsisten (YYYY-MM) dan bullet point.</li>
-                <li>Masukkan kata kunci dari deskripsi pekerjaan.</li>
-                <li>Hindari tabel/kolom rumit saat ekspor untuk ATS (gunakan TXT atau PDF sederhana).</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+    </main>
 
-      </div>
-    </section>
+    <footer>
+        <p>
+            <strong>ATS CV Maker Benchmark Project</strong><br>
+            Comparing LLM approaches to web application development
+        </p>
+        <p>
+            <a href="https://github.com/your-repo/ats-cv-maker" style="color: var(--accent);">
+                View on GitHub
+            </a>
+        </p>
+    </footer>
 
-    <section class="panel preview">
-      <header><h2>Pratinjau CV (ATS-Friendly)</h2></header>
-      <div class="body">
-        <div class="cv" id="cv">
-          <header>
-            <div class="id">
-              <h1 id="cv-name">Nama Lengkap</h1>
-              <p id="cv-headline">Jabatan</p>
-              <div class="contact" id="cv-contact"></div>
-            </div>
-            <div class="badge">
-              <canvas id="avatar" width="160" height="160"></canvas>
-            </div>
-          </header>
-          <main>
-            <section id="cv-main">
-              <div class="block">
-                <h3>Ringkasan</h3>
-                <div id="cv-summary" class="meta">Tulis ringkasan profesional singkat.</div>
-              </div>
-              <div class="block">
-                <h3>Pengalaman</h3>
-                <div id="cv-exp"></div>
-              </div>
-              <div class="block">
-                <h3>Pendidikan</h3>
-                <div id="cv-edu"></div>
-              </div>
-            </section>
-            <section>
-              <div class="block">
-                <h3>Keterampilan</h3>
-                <div id="cv-skills" class="skills"></div>
-              </div>
-              <div class="block">
-                <h3>Prestasi</h3>
-                <div id="cv-ach"></div>
-              </div>
-              <div class="block">
-                <h3>Kecocokan Kata Kunci</h3>
-                <div class="bar"><i id="kw-bar" style="width:0%"></i></div>
-                <div class="meta" id="kw-meta">0% kesesuaian</div>
-              </div>
-            </section>
-          </main>
-        </div>
-        <div class="footer-note">Gunakan tombol Cetak untuk PDF. Simpan .TXT untuk versi ATS dan unggah ke sistem rekrutmen.</div>
-      </div>
-    </section>
-  </div>
-
-  <script type="module">
-    // Simple state
-    const $ = (q, el=document)=>el.querySelector(q);
-    const $$ = (q, el=document)=>Array.from(el.querySelectorAll(q));
-
-    const state = {
-      name: "", headline: "", email: "", phone: "", location: "", linkedin: "", website: "", summary: "",
-      exp: [],
-      edu: [],
-      skills: [],
-      ach: []
-    };
-
-    // Procedural avatar (identicon-like) on canvas (no external asset)
-    function drawAvatar(seedText){
-      const cv = $('#avatar');
-      const ctx = cv.getContext('2d');
-      const seed = hashCode(seedText || 'cv');
-      const blocks = 5, size = cv.width, cell = Math.floor(size/blocks);
-      // bg
-      ctx.fillStyle = '#f5f7ff';
-      ctx.fillRect(0,0,size,size);
-      // palette
-      const c1 = hsl((seed % 360), 80, 55);
-      const c2 = hsl(((seed*3) % 360), 70, 45);
-      for(let y=0;y<blocks;y++){
-        for(let x=0;x<Math.ceil(blocks/2);x++){
-          const bit = bitAt(seed, y*blocks+x);
-          if(bit){
-            ctx.fillStyle = (x+y)%2 ? c1 : c2;
-            ctx.fillRect(x*cell, y*cell, cell, cell);
-            ctx.fillRect((blocks-1-x)*cell, y*cell, cell, cell);
-          }
-        }
-      }
-      // circle mask effect
-      const rad = size/2 - 4;
-      const img = ctx.getImageData(0,0,size,size);
-      const d = img.data;
-      for(let j=0;j<size;j++){
-        for(let i=0;i<size;i++){
-          const dx = i - size/2, dy = j - size/2;
-          const idx = (j*size + i)*4 + 3;
-          if(Math.hypot(dx,dy)>rad){ d[idx]=0; }
-        }
-      }
-      ctx.clearRect(0,0,size,size);
-      ctx.putImageData(img,0,0);
-    }
-    function hsl(h,s,l){return `hsl(${h} ${s}% ${l}%)`}
-    function hashCode(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h);}
-    function bitAt(n, i){return (n>> (i%31)) & 1}
-
-    // Form builders
-    const expList = $('#exp-list');
-    const eduList = $('#edu-list');
-    const skillList = $('#skill-list');
-    const achList = $('#ach-list');
-
-    function expRow(data={}, index){
-      const wrap = document.createElement('div');
-      wrap.className = 'mini';
-      wrap.innerHTML = `
-        <div class="row">
-          <input placeholder="Perusahaan" value="${esc(data.company)}" data-k="company">
-          <input placeholder="Jabatan" value="${esc(data.role)}" data-k="role">
-          <input placeholder="Lokasi" value="${esc(data.location||'')}" data-k="location">
-        </div>
-        <div class="row">
-          <input type="month" value="${esc(data.start||'')}" data-k="start">
-          <input type="month" value="${esc(data.end||'')}" data-k="end">
-          <input placeholder="Pencapaian (pisahkan ; )" value="${esc((data.points||[]).join('; '))}" data-k="points">
-        </div>
-        <div class="row">
-          <input placeholder="Teknologi (pisahkan , )" value="${esc((data.tech||[]).join(', '))}" data-k="tech">
-          <button data-act="up">↑</button>
-          <button data-act="down">↓</button>
-          <button data-act="del">Hapus</button>
-        </div>
-      `;
-      bindMini(wrap, 'exp', index);
-      return wrap;
-    }
-
-    function eduRow(data={}, index){
-      const wrap = document.createElement('div');
-      wrap.className = 'mini';
-      wrap.innerHTML = `
-        <div class="row">
-          <input placeholder="Institusi" value="${esc(data.school)}" data-k="school">
-          <input placeholder="Gelar / Program" value="${esc(data.degree)}" data-k="degree">
-          <input placeholder="Lokasi" value="${esc(data.location||'')}" data-k="location">
-        </div>
-        <div class="row">
-          <input type="month" value="${esc(data.start||'')}" data-k="start">
-          <input type="month" value="${esc(data.end||'')}" data-k="end">
-          <input placeholder="Detail (opsional)" value="${esc(data.detail||'')}" data-k="detail">
-        </div>
-        <div class="row">
-          <button data-act="up">↑</button>
-          <button data-act="down">↓</button>
-          <button data-act="del">Hapus</button>
-        </div>
-      `;
-      bindMini(wrap, 'edu', index);
-      return wrap;
-    }
-
-    function skillRow(data={}, index){
-      const wrap = document.createElement('div');
-      wrap.className = 'mini';
-      wrap.innerHTML = `
-        <div class="row">
-          <input placeholder="Skill / Alat" value="${esc(data.name)}" data-k="name">
-          <select data-k="level">
-            ${['Dasar','Menengah','Mahir','Ahli'].map(l=>`<option ${data.level===l?'selected':''}>${l}</option>`).join('')}
-          </select>
-          <button data-act="del">Hapus</button>
-        </div>
-      `;
-      bindMini(wrap, 'skills', index);
-      return wrap;
-    }
-
-    function achRow(data={}, index){
-      const wrap = document.createElement('div');
-      wrap.className = 'mini';
-      wrap.innerHTML = `
-        <div class="row">
-          <input placeholder="Prestasi / Sertifikasi" value="${esc(data.title)}" data-k="title">
-          <input placeholder="Tahun / ID (opsional)" value="${esc(data.year||'')}" data-k="year">
-          <button data-act="del">Hapus</button>
-        </div>
-      `;
-      bindMini(wrap, 'ach', index);
-      return wrap;
-    }
-
-    function bindMini(wrap, key, index){
-      wrap.addEventListener('input', (e)=>{
-        const t = e.target;
-        const k = t.dataset.k;
-        if(!k) return;
-        ensureIndex(key, index);
-        if(k==='points'){
-          state[key][index][k] = splitSemi(t.value);
-        } else if(k==='tech'){
-          state[key][index][k] = splitComma(t.value);
-        } else {
-          state[key][index][k] = t.value;
-        }
-        render();
-        persist();
-      });
-      wrap.addEventListener('click', (e)=>{
-        const act = e.target.dataset.act;
-        if(!act) return;
-        ensureIndex(key, index);
-        if(act==='del'){
-          state[key].splice(index,1);
-        } else if(act==='up' && index>0){
-          [state[key][index-1], state[key][index]] = [state[key][index], state[key][index-1]];
-        } else if(act==='down' && index<state[key].length-1){
-          [state[key][index+1], state[key][index]] = [state[key][index], state[key][index+1]];
-        }
-        rebuildLists();
-        render();
-        persist();
-      }, {capture:true});
-    }
-
-    function ensureIndex(key, index){
-      if(!state[key]) state[key] = [];
-      if(!state[key][index]) state[key][index] = {};
-    }
-
-    function splitComma(s){ return s.split(',').map(v=>v.trim()).filter(Boolean); }
-    function splitSemi(s){ return s.split(';').map(v=>v.trim()).filter(Boolean); }
-
-    function esc(s=""){ return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-
-    // Inputs
-    const bindMap = ["name","headline","email","phone","location","linkedin","website","summary"];
-    bindMap.forEach(id=>{
-      const el = document.getElementById(id);
-      el.addEventListener('input', ()=>{
-        state[id] = el.value;
-        if(id==='name') drawAvatar(state.name);
-        render();
-        persist();
-      });
-    });
-
-    // Add buttons
-    $('#btn-add-exp').addEventListener('click', ()=>{
-      state.exp.push({company:"", role:"", location:"", start:"", end:"", points:[], tech:[]});
-      rebuildLists(); render(); persist();
-    });
-    $('#btn-add-edu').addEventListener('click', ()=>{
-      state.edu.push({school:"", degree:"", location:"", start:"", end:"", detail:""});
-      rebuildLists(); render(); persist();
-    });
-    $('#btn-add-skill').addEventListener('click', ()=>{
-      state.skills.push({name:"", level:"Menengah"});
-      rebuildLists(); render(); persist();
-    });
-    $('#btn-add-ach').addEventListener('click', ()=>{
-      state.ach.push({title:"", year:""});
-      rebuildLists(); render(); persist();
-    });
-
-    // Suggestions based on headline
-    const keywordBank = {
-      "software engineer": ["JavaScript","TypeScript","Node.js","React","REST API","SQL","NoSQL","Git","CI/CD","Unit Testing","AWS","Docker","Microservices","Agile","Problem Solving"],
-      "data analyst": ["SQL","Excel","Python","Pandas","Tableau","Power BI","Data Visualization","ETL","A/B Testing","Statistics","Communication","Storytelling","Business Intelligence"],
-      "ui/ux designer": ["Figma","Wireframing","Prototyping","User Research","Usability Testing","Design System","Accessibility","Interaction Design","Visual Design"],
-      "product manager": ["Roadmap","Backlog","Stakeholder","User Research","Metrics","A/B Testing","PRD","Agile","Prioritization","Go-to-market"],
-      "devops": ["CI/CD","Docker","Kubernetes","Terraform","Linux","Monitoring","AWS","GCP","Azure","IaC","Networking","SRE","Observability"],
-      "marketing": ["SEO","SEM","Content Marketing","Email Marketing","Analytics","CRO","Social Media","Copywriting","CRM"]
-    };
-    $('#btn-suggest').addEventListener('click', ()=>{
-      const h = (state.headline||"").toLowerCase();
-      let best = [];
-      for(const k in keywordBank){
-        if(h.includes(k)) { best = keywordBank[k]; break; }
-      }
-      if(best.length===0){ best = ["Communication","Teamwork","Problem Solving","Time Management","Leadership"]; }
-      const existing = new Set(state.skills.map(s=>s.name.toLowerCase()));
-      best.forEach(k=>{
-        if(!existing.has(k.toLowerCase())) state.skills.push({name:k, level:"Menengah"});
-      });
-      rebuildLists(); render(); persist();
-    });
-
-    // Buttons header
-    $('#btn-load-sample').addEventListener('click', ()=>{
-      loadSample();
-      rebuildLists(); fillInputs(); render(); persist(); drawAvatar(state.name);
-    });
-    $('#btn-clear').addEventListener('click', ()=>{
-      if(!confirm('Bersihkan semua data?')) return;
-      Object.keys(state).forEach(k=> Array.isArray(state[k]) ? state[k]=[] : state[k]="");
-      rebuildLists(); fillInputs(); render(); persist(); drawAvatar('cv');
-    });
-    $('#btn-print').addEventListener('click', ()=> window.print());
-    $('#btn-download-txt').addEventListener('click', ()=>{
-      const txt = toPlainText(state);
-      download('CV_ATS.txt', txt);
-    });
-
-    function toPlainText(s){
-      const lines = [];
-      lines.push(`${s.name}`.trim());
-      lines.push(`${s.headline}`.trim());
-      lines.push(`Email: ${s.email} | Tel: ${s.phone} | ${s.location}`);
-      if(s.linkedin) lines.push(`LinkedIn: ${s.linkedin}`);
-      if(s.website) lines.push(`Website: ${s.website}`);
-      lines.push('');
-      lines.push('Ringkasan');
-      lines.push(s.summary);
-      lines.push('');
-      if(s.exp.length){
-        lines.push('Pengalaman');
-        s.exp.forEach(e=>{
-          lines.push(`- ${e.role} — ${e.company} (${fmtYM(e.start)} - ${fmtYM(e.end) || 'Sekarang'})`);
-          if(e.location) lines.push(`  Lokasi: ${e.location}`);
-          (e.points||[]).forEach(p=> lines.push(`  • ${p}`));
-          if(e.tech && e.tech.length) lines.push(`  Teknologi: ${e.tech.join(', ')}`);
+    <script>
+        // Add some interactive enhancements
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+            });
         });
-        lines.push('');
-      }
-      if(s.edu.length){
-        lines.push('Pendidikan');
-        s.edu.forEach(e=>{
-          lines.push(`- ${e.degree} — ${e.school} (${fmtYM(e.start)} - ${fmtYM(e.end)})`);
-          if(e.location) lines.push(`  Lokasi: ${e.location}`);
-          if(e.detail) lines.push(`  ${e.detail}`);
+
+        // Add click tracking for analytics (if needed)
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const implementation = e.target.textContent;
+                console.log(`Navigating to: ${implementation}`);
+                // Add analytics tracking here if needed
+            });
         });
-        lines.push('');
-      }
-      if(s.skills.length){
-        lines.push('Keterampilan');
-        lines.push('- ' + s.skills.map(k=>k.name).join(', '));
-        lines.push('');
-      }
-      if(s.ach.length){
-        lines.push('Prestasi / Sertifikasi');
-        s.ach.forEach(a=> lines.push(`- ${a.title}${a.year?` (${a.year})`:''}`));
-      }
-      return lines.join('\n');
-    }
-
-    function fmtYM(s){ if(!s) return ''; const [y,m]=s.split('-'); return `${y}-${m}`; }
-
-    function download(filename, text){
-      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename; a.click();
-      setTimeout(()=>URL.revokeObjectURL(url), 5000);
-    }
-
-    // Render preview
-    function render(){
-      $('#cv-name').textContent = state.name || 'Nama Lengkap';
-      $('#cv-headline').textContent = state.headline || 'Jabatan';
-      $('#cv-summary').textContent = state.summary || 'Tulis ringkasan profesional singkat.';
-      $('#cv-contact').innerHTML = [
-        state.email? `<div>Email: ${esc(state.email)}</div>`:'',
-        state.phone? `<div>Telp: ${esc(state.phone)}</div>`:'',
-        state.location? `<div>Lokasi: ${esc(state.location)}</div>`:'',
-        state.linkedin? `<div>LinkedIn: ${esc(state.linkedin)}</div>`:'',
-        state.website? `<div>Website: ${esc(state.website)}</div>`:''
-      ].filter(Boolean).join('');
-
-      // pengalaman
-      const expHTML = state.exp.map(e=>{
-        const dates = [fmtYM(e.start), fmtYM(e.end)||'Sekarang'].filter(Boolean).join(' - ');
-        const pts = (e.points||[]).map(p=> `<li>${esc(p)}</li>`).join('');
-        const tech = (e.tech&&e.tech.length)? `<div class="meta">Teknologi: ${esc(e.tech.join(', '))}</div>` : '';
-        return `
-          <div class="item">
-            <h4>${esc(e.role||'Jabatan')} — ${esc(e.company||'Perusahaan')}</h4>
-            <div class="split meta"><span>${esc(e.location||'')}</span><span>${dates}</span></div>
-            ${pts? `<ul>${pts}</ul>`:''}
-            ${tech}
-          </div>
-        `;
-      }).join('');
-      $('#cv-exp').innerHTML = expHTML || '<div class="meta">Belum ada data pengalaman.</div>';
-
-      // pendidikan
-      const eduHTML = state.edu.map(e=>{
-        const dates = [fmtYM(e.start), fmtYM(e.end)].filter(Boolean).join(' - ');
-        return `
-          <div class="item">
-            <h4>${esc(e.degree||'Gelar')} — ${esc(e.school||'Institusi')}</h4>
-            <div class="split meta"><span>${esc(e.location||'')}</span><span>${dates}</span></div>
-            ${e.detail? `<div class="meta">${esc(e.detail)}</div>`:''}
-          </div>
-        `;
-      }).join('');
-      $('#cv-edu').innerHTML = eduHTML || '<div class="meta">Belum ada data pendidikan.</div>';
-
-      // skills
-      $('#cv-skills').innerHTML = (state.skills.length? state.skills.map(s=> `<span class="skill">${esc(s.name)}</span>`).join('') : '<div class="meta">Tambahkan keterampilan Anda.</div>');
-
-      // achievements
-      $('#cv-ach').innerHTML = (state.ach.length? state.ach.map(a=> `<div class="item"><div class="meta">• ${esc(a.title)} ${a.year?`(${esc(a.year)})`:''}</div></div>`).join('') : '<div class="meta">Tambahkan prestasi atau sertifikasi.</div>');
-
-      // score and keyword match
-      scoring();
-    }
-
-    function rebuildLists(){
-      expList.innerHTML = '';
-      eduList.innerHTML = '';
-      skillList.innerHTML = '';
-      achList.innerHTML = '';
-      state.exp.forEach((e,i)=> expList.appendChild(expRow(e,i)));
-      state.edu.forEach((e,i)=> eduList.appendChild(eduRow(e,i)));
-      state.skills.forEach((e,i)=> skillList.appendChild(skillRow(e,i)));
-      state.ach.forEach((e,i)=> achList.appendChild(achRow(e,i)));
-    }
-
-    // Scoring system for ATS friendliness
-    function scoring(){
-      let score = 0, max = 100, tips = [];
-
-      // Core fields
-      if(state.name) score+=10; else tips.push('Isi Nama Lengkap.');
-      if(state.email && /@/.test(state.email)) score+=8; else tips.push('Isi email valid.');
-      if(state.phone) score+=6; else tips.push('Tambahkan nomor telepon.');
-      if(state.headline) score+=6; else tips.push('Isi jabatan yang dilamar.');
-      if(state.summary && state.summary.split(/\s+/).length >= 25) score+=8; else tips.push('Ringkasan 25-60 kata dengan kata kunci.');
-      if(state.skills.length>=6) score+=10; else tips.push('Tambahkan minimal 6 keterampilan relevan.');
-
-      // Experience quality
-      let expPts = 0;
-      state.exp.forEach(e=>{
-        if(e.company && e.role) expPts += 4;
-        if(e.start) expPts += 2;
-        if(e.points && e.points.length>=2) expPts += 4;
-        if(e.tech && e.tech.length>=3) expPts += 3;
-      });
-      score += Math.min(25, expPts);
-
-      // Education
-      if(state.edu.length) score+=8; else tips.push('Tambahkan riwayat pendidikan.');
-
-      // Links
-      if(state.linkedin) score+=3;
-      if(state.website) score+=3;
-
-      // Keyword match vs headline suggestions
-      const sugg = getSuggestedKeywords();
-      const have = new Set(state.skills.map(s=>s.name.toLowerCase()));
-      let matched = 0;
-      sugg.forEach(k=> { if(have.has(k.toLowerCase())) matched++; });
-      const kwPct = sugg.length? Math.round(100*matched/Math.max(5, sugg.length)) : 0;
-      $('#kw-bar').style.width = Math.min(100, kwPct) + '%';
-      $('#kw-meta').textContent = `${kwPct}% kesesuaian kata kunci`;
-      score += Math.min(18, Math.round(kwPct/100*18));
-
-      score = Math.min(max, score);
-      const scoreEl = $('#score');
-      scoreEl.textContent = score;
-      scoreEl.classList.remove('bad','med');
-      if(score<45) scoreEl.classList.add('bad');
-      else if(score<75) scoreEl.classList.add('med');
-
-      // tips list
-      const tipsList = $('#tips-list');
-      tipsList.innerHTML = tips.slice(0,6).map(t=> `<li>${esc(t)}</li>`).join('') || '<li>CV Anda siap. Pertahankan format sederhana tanpa grafik kompleks untuk ATS.</li>';
-    }
-
-    function getSuggestedKeywords(){
-      const h = (state.headline||'').toLowerCase();
-      for(const k in keywordBank){
-        if(h.includes(k)) return keywordBank[k];
-      }
-      return [];
-    }
-
-    // Persistence
-    function persist(){
-      try{ localStorage.setItem('cv_ats_state', JSON.stringify(state)); }catch(e){}
-    }
-    function restore(){
-      try{
-        const raw = localStorage.getItem('cv_ats_state');
-        if(!raw) return false;
-        const data = JSON.parse(raw);
-        Object.assign(state, data);
-        return true;
-      }catch(e){ return false; }
-    }
-    function fillInputs(){
-      bindMap.forEach(id=> { const el = document.getElementById(id); el.value = state[id] || ''; });
-    }
-
-    function loadSample(){
-      Object.assign(state, {
-        name: "Dewi Kartika",
-        headline: "Software Engineer",
-        email: "dewi.kartika@example.com",
-        phone: "+62 812-3456-7890",
-        location: "Jakarta, Indonesia",
-        linkedin: "https://linkedin.com/in/dewik",
-        website: "https://dewik.dev",
-        summary: "Software Engineer dengan 5+ tahun pengalaman membangun aplikasi web skala besar. Menguasai JavaScript/TypeScript, React, Node.js, dan arsitektur microservices. Berpengalaman meningkatkan kinerja, mengoptimalkan SEO, dan menerapkan CI/CD. Berorientasi pada dampak bisnis dan kolaborasi lintas fungsi.",
-        exp: [
-          {
-            company:"Tech Nusantara",
-            role:"Senior Software Engineer",
-            location:"Jakarta",
-            start:"2021-03",
-            end:"",
-            points:[
-              "Memimpin migrasi monolith ke microservices, menurunkan MTTR 35%",
-              "Mengoptimalkan rendering React, mempercepat LCP 42%"
-            ],
-            tech:["TypeScript","React","Node.js","PostgreSQL","Docker"]
-          },
-          {
-            company:"Rupa Kode",
-            role:"Software Engineer",
-            location:"Bandung",
-            start:"2018-08",
-            end:"2021-02",
-            points:[
-              "Membangun sistem order real-time, menaikkan konversi 12%",
-              "Mengimplementasikan pipeline CI/CD dan 300+ test unit"
-            ],
-            tech:["JavaScript","Express","Redis","AWS","Jest"]
-          }
-        ],
-        edu: [
-          {school:"Institut Teknologi Bandung", degree:"S.T. Informatika", location:"Bandung", start:"2014-08", end:"2018-07", detail:"IPK 3.6/4.0"}
-        ],
-        skills: [
-          {name:"JavaScript", level:"Ahli"},
-          {name:"TypeScript", level:"Mahir"},
-          {name:"React", level:"Mahir"},
-          {name:"Node.js", level:"Mahir"},
-          {name:"PostgreSQL", level:"Menengah"},
-          {name:"Docker", level:"Menengah"},
-          {name:"CI/CD", level:"Menengah"},
-          {name:"Unit Testing", level:"Menengah"}
-        ],
-        ach: [
-          {title:"AWS Certified Cloud Practitioner", year:"2022"},
-          {title:"Juara 2 Hackathon XYZ", year:"2020"}
-        ]
-      });
-    }
-
-    // Initialize lists
-    function init(){
-      const had = restore();
-      if(!had){
-        // start with one blank row for better UX
-        state.exp = [{company:"", role:"", location:"", start:"", end:"", points:[], tech:[]}];
-        state.edu = [{school:"", degree:"", location:"", start:"", end:"", detail:""}];
-        state.skills = [{name:"", level:"Menengah"}];
-        state.ach = [];
-      }
-      rebuildLists();
-      fillInputs();
-      render();
-      drawAvatar(state.name || 'cv');
-    }
-
-    init();
-  </script>
+    </script>
 </body>
 </html>

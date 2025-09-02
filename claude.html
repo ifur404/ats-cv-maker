@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS CV Builder - Claude Implementation</title>
+    <style>
+        :root {
+            --bg-primary: #1a1d2e;
+            --bg-secondary: #242740;
+            --bg-tertiary: #2d3250;
+            --text-primary: #ffffff;
+            --text-secondary: #b8c5d6;
+            --text-muted: #8a9ba8;
+            --accent-blue: #4a9eff;
+            --accent-purple: #b866f5;
+            --accent-green: #00d27a;
+            --accent-orange: #ff7849;
+            --border-subtle: rgba(255, 255, 255, 0.1);
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.25);
+            --shadow-intense: 0 8px 40px rgba(0, 0, 0, 0.35);
+            --radius: 12px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            min-height: 100vh;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .panel-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .panel-body {
+            padding: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input, textarea, select {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: var(--transition);
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-intense);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        .dynamic-list {
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .list-item {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            display: grid;
+            gap: 1rem;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .list-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .add-item-btn {
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        /* CV Preview Styles */
+        .cv-preview {
+            background: white;
+            color: #1a1a1a;
+            font-family: 'Georgia', serif;
+            line-height: 1.5;
+            box-shadow: var(--shadow-intense);
+        }
+
+        .cv-header {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .cv-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 0.5rem;
+        }
+
+        .cv-title {
+            font-size: 1.25rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+
+        .cv-contact {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.875rem;
+            color: #495057;
+        }
+
+        .cv-body {
+            padding: 2rem;
+        }
+
+        .cv-section {
+            margin-bottom: 2rem;
+        }
+
+        .cv-section-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .cv-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .cv-item-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 0.25rem;
+        }
+
+        .cv-item-subtitle {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .cv-item-description {
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .cv-item-description ul {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .skill-category {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .skill-category-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .skill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .skill-tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .ats-score {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .score-good { color: var(--accent-green); }
+        .score-medium { color: var(--accent-orange); }
+        .score-poor { color: #ff4757; }
+
+        .score-tips {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .score-tips ul {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .export-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .list-item {
+            animation: slideIn 0.3s ease;
+        }
+
+        /* Print Styles */
+        @media print {
+            body { background: white; }
+            .container { grid-template-columns: 1fr; }
+            .panel:not(.cv-preview) { display: none; }
+            .cv-preview { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Form Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <h1 class="panel-title">ATS CV Builder</h1>
+                <p class="panel-subtitle">Create an ATS-friendly resume optimized for applicant tracking systems</p>
+            </div>
+            <div class="panel-body">
+                <!-- Personal Information -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span>👤</span> Personal Information
+                    </h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" placeholder="John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label for="jobTitle">Target Job Title</label>
+                            <input type="text" id="jobTitle" placeholder="Software Engineer">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" placeholder="john@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" placeholder="+1 (555) 123-4567">
+                        </div>
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <input type="text" id="location" placeholder="New York, NY">
+                        </div>
+                        <div class="form-group">
+                            <label for="linkedin">LinkedIn</label>
+                            <input type="url" id="linkedin" placeholder="https://linkedin.com/in/johndoe">
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="summary">Professional Summary</label>
+                            <textarea id="summary" placeholder="Brief summary of your professional background and key strengths..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experience Section -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span>💼</span> Work Experience
+                    </h2>
+                    <div class="dynamic-list" id="experienceList">
+                        <!-- Experience items will be dynamically added here -->
+                    </div>
+                    <button class="btn add-item-btn" onclick="addExperience()">+ Add Experience</button>
+                </div>
+
+                <!-- Education Section -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span>🎓</span> Education
+                    </h2>
+                    <div class="dynamic-list" id="educationList">
+                        <!-- Education items will be dynamically added here -->
+                    </div>
+                    <button class="btn add-item-btn" onclick="addEducation()">+ Add Education</button>
+                </div>
+
+                <!-- Skills Section -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span>⚡</span> Skills
+                    </h2>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="skills">Skills (comma-separated)</label>
+                            <textarea id="skills" placeholder="JavaScript, React, Node.js, Python, SQL, Git..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ATS Score -->
+                <div class="ats-score">
+                    <div class="score-value score-medium" id="atsScore">75</div>
+                    <div>ATS Compatibility Score</div>
+                    <div class="score-tips">
+                        <strong>Optimization Tips:</strong>
+                        <ul id="optimizationTips">
+                            <li>Use standard section headings</li>
+                            <li>Include relevant keywords from job descriptions</li>
+                            <li>Use a clean, simple format</li>
+                            <li>Include measurable achievements</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Export Controls -->
+                <div class="export-controls">
+                    <button class="btn" onclick="exportPDF()">📄 Export PDF</button>
+                    <button class="btn btn-secondary" onclick="exportText()">📝 Export Text</button>
+                    <button class="btn btn-secondary" onclick="loadSample()">🔄 Load Sample</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CV Preview Panel -->
+        <div class="panel cv-preview">
+            <div class="cv-header">
+                <h1 class="cv-name" id="previewName">Your Name</h1>
+                <h2 class="cv-title" id="previewTitle">Your Job Title</h2>
+                <div class="cv-contact" id="previewContact">
+                    <!-- Contact info will be populated here -->
+                </div>
+            </div>
+            <div class="cv-body">
+                <div class="cv-section">
+                    <h3 class="cv-section-title">Professional Summary</h3>
+                    <p id="previewSummary">Your professional summary will appear here...</p>
+                </div>
+
+                <div class="cv-section" id="previewExperience">
+                    <h3 class="cv-section-title">Work Experience</h3>
+                    <!-- Experience items will be populated here -->
+                </div>
+
+                <div class="cv-section" id="previewEducation">
+                    <h3 class="cv-section-title">Education</h3>
+                    <!-- Education items will be populated here -->
+                </div>
+
+                <div class="cv-section">
+                    <h3 class="cv-section-title">Skills</h3>
+                    <div class="skill-list" id="previewSkills">
+                        <!-- Skills will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let cvData = {
+            personal: {},
+            experience: [],
+            education: [],
+            skills: []
+        };
+
+        // Initialize the application
+        function init() {
+            setupEventListeners();
+            addExperience(); // Add one initial experience item
+            addEducation(); // Add one initial education item
+            updatePreview();
+        }
+
+        // Setup event listeners for form inputs
+        function setupEventListeners() {
+            const inputs = ['fullName', 'jobTitle', 'email', 'phone', 'location', 'linkedin', 'summary', 'skills'];
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', () => {
+                        cvData.personal[id] = element.value;
+                        updatePreview();
+                        calculateATSScore();
+                    });
+                }
+            });
+        }
+
+        // Add experience item
+        function addExperience() {
+            const experienceId = 'exp_' + Date.now();
+            const experienceItem = {
+                id: experienceId,
+                company: '',
+                position: '',
+                startDate: '',
+                endDate: '',
+                description: ''
+            };
+
+            cvData.experience.push(experienceItem);
+
+            const listContainer = document.getElementById('experienceList');
+            const itemElement = document.createElement('div');
+            itemElement.className = 'list-item';
+            itemElement.innerHTML = `
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Company</label>
+                        <input type="text" placeholder="Company Name" onchange="updateExperience('${experienceId}', 'company', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Position</label>
+                        <input type="text" placeholder="Job Title" onchange="updateExperience('${experienceId}', 'position', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="month" onchange="updateExperience('${experienceId}', 'startDate', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="month" onchange="updateExperience('${experienceId}', 'endDate', this.value)">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Description & Achievements</label>
+                        <textarea placeholder="• Describe your key responsibilities and achievements..." onchange="updateExperience('${experienceId}', 'description', this.value)"></textarea>
+                    </div>
+                </div>
+                <div class="list-controls">
+                    <button class="btn btn-secondary btn-small" onclick="removeExperience('${experienceId}')">Remove</button>
+                </div>
+            `;
+
+            listContainer.appendChild(itemElement);
+        }
+
+        // Update experience item
+        function updateExperience(id, field, value) {
+            const item = cvData.experience.find(exp => exp.id === id);
+            if (item) {
+                item[field] = value;
+                updatePreview();
+                calculateATSScore();
+            }
+        }
+
+        // Remove experience item
+        function removeExperience(id) {
+            cvData.experience = cvData.experience.filter(exp => exp.id !== id);
+            document.querySelector(`[onclick*="${id}"]`).closest('.list-item').remove();
+            updatePreview();
+            calculateATSScore();
+        }
+
+        // Add education item
+        function addEducation() {
+            const educationId = 'edu_' + Date.now();
+            const educationItem = {
+                id: educationId,
+                school: '',
+                degree: '',
+                startDate: '',
+                endDate: '',
+                details: ''
+            };
+
+            cvData.education.push(educationItem);
+
+            const listContainer = document.getElementById('educationList');
+            const itemElement = document.createElement('div');
+            itemElement.className = 'list-item';
+            itemElement.innerHTML = `
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>School/Institution</label>
+                        <input type="text" placeholder="University Name" onchange="updateEducation('${educationId}', 'school', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Degree/Program</label>
+                        <input type="text" placeholder="Bachelor of Science" onchange="updateEducation('${educationId}', 'degree', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="month" onchange="updateEducation('${educationId}', 'startDate', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="month" onchange="updateEducation('${educationId}', 'endDate', this.value)">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Additional Details</label>
+                        <textarea placeholder="GPA, honors, relevant coursework..." onchange="updateEducation('${educationId}', 'details', this.value)"></textarea>
+                    </div>
+                </div>
+                <div class="list-controls">
+                    <button class="btn btn-secondary btn-small" onclick="removeEducation('${educationId}')">Remove</button>
+                </div>
+            `;
+
+            listContainer.appendChild(itemElement);
+        }
+
+        // Update education item
+        function updateEducation(id, field, value) {
+            const item = cvData.education.find(edu => edu.id === id);
+            if (item) {
+                item[field] = value;
+                updatePreview();
+                calculateATSScore();
+            }
+        }
+
+        // Remove education item
+        function removeEducation(id) {
+            cvData.education = cvData.education.filter(edu => edu.id !== id);
+            document.querySelector(`[onclick*="${id}"]`).closest('.list-item').remove();
+            updatePreview();
+            calculateATSScore();
+        }
+
+        // Update CV preview
+        function updatePreview() {
+            // Update personal info
+            document.getElementById('previewName').textContent = cvData.personal.fullName || 'Your Name';
+            document.getElementById('previewTitle').textContent = cvData.personal.jobTitle || 'Your Job Title';
+            document.getElementById('previewSummary').textContent = cvData.personal.summary || 'Your professional summary will appear here...';
+
+            // Update contact info
+            const contactInfo = [];
+            if (cvData.personal.email) contactInfo.push(`📧 ${cvData.personal.email}`);
+            if (cvData.personal.phone) contactInfo.push(`📞 ${cvData.personal.phone}`);
+            if (cvData.personal.location) contactInfo.push(`📍 ${cvData.personal.location}`);
+            if (cvData.personal.linkedin) contactInfo.push(`💼 LinkedIn`);
+            
+            document.getElementById('previewContact').innerHTML = contactInfo.join(' | ');
+
+            // Update experience
+            const expContainer = document.getElementById('previewExperience');
+            const expContent = cvData.experience.map(exp => {
+                if (!exp.company && !exp.position) return '';
+                
+                const dateRange = `${formatDate(exp.startDate)} - ${exp.endDate ? formatDate(exp.endDate) : 'Present'}`;
+                
+                return `
+                    <div class="cv-item">
+                        <div class="cv-item-title">${exp.position || 'Position'}</div>
+                        <div class="cv-item-subtitle">${exp.company || 'Company'} | ${dateRange}</div>
+                        <div class="cv-item-description">${formatDescription(exp.description)}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            expContainer.innerHTML = `
+                <h3 class="cv-section-title">Work Experience</h3>
+                ${expContent || '<p>No work experience added yet.</p>'}
+            `;
+
+            // Update education
+            const eduContainer = document.getElementById('previewEducation');
+            const eduContent = cvData.education.map(edu => {
+                if (!edu.school && !edu.degree) return '';
+                
+                const dateRange = `${formatDate(edu.startDate)} - ${formatDate(edu.endDate)}`;
+                
+                return `
+                    <div class="cv-item">
+                        <div class="cv-item-title">${edu.degree || 'Degree'}</div>
+                        <div class="cv-item-subtitle">${edu.school || 'School'} | ${dateRange}</div>
+                        ${edu.details ? `<div class="cv-item-description">${edu.details}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            eduContainer.innerHTML = `
+                <h3 class="cv-section-title">Education</h3>
+                ${eduContent || '<p>No education added yet.</p>'}
+            `;
+
+            // Update skills
+            if (cvData.personal.skills) {
+                const skills = cvData.personal.skills.split(',').map(s => s.trim()).filter(s => s);
+                const skillsHTML = skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('');
+                document.getElementById('previewSkills').innerHTML = skillsHTML;
+            } else {
+                document.getElementById('previewSkills').innerHTML = '<p>No skills added yet.</p>';
+            }
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString + '-01');
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+        }
+
+        // Format description with bullet points
+        function formatDescription(description) {
+            if (!description) return '';
+            
+            const lines = description.split('\n').filter(line => line.trim());
+            if (lines.length === 1) return description;
+            
+            const bulletPoints = lines.map(line => {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+                    return `<li>${trimmed.substring(1).trim()}</li>`;
+                }
+                return `<li>${trimmed}</li>`;
+            });
+            
+            return `<ul>${bulletPoints.join('')}</ul>`;
+        }
+
+        // Calculate ATS compatibility score
+        function calculateATSScore() {
+            let score = 0;
+            const tips = [];
+
+            // Personal information scoring
+            if (cvData.personal.fullName) score += 10;
+            else tips.push('Add your full name');
+
+            if (cvData.personal.email) score += 10;
+            else tips.push('Add your email address');
+
+            if (cvData.personal.phone) score += 5;
+            else tips.push('Add your phone number');
+
+            if (cvData.personal.jobTitle) score += 10;
+            else tips.push('Add your target job title');
+
+            if (cvData.personal.summary && cvData.personal.summary.length > 50) score += 15;
+            else tips.push('Write a compelling professional summary');
+
+            // Experience scoring
+            const validExperience = cvData.experience.filter(exp => exp.company && exp.position).length;
+            if (validExperience >= 2) score += 20;
+            else if (validExperience === 1) score += 10;
+            else tips.push('Add at least one work experience');
+
+            // Education scoring
+            const validEducation = cvData.education.filter(edu => edu.school && edu.degree).length;
+            if (validEducation >= 1) score += 10;
+            else tips.push('Add your education background');
+
+            // Skills scoring
+            if (cvData.personal.skills) {
+                const skillCount = cvData.personal.skills.split(',').filter(s => s.trim()).length;
+                if (skillCount >= 5) score += 10;
+                else if (skillCount >= 3) score += 5;
+                else tips.push('Add more relevant skills');
+            } else {
+                tips.push('Add your technical and soft skills');
+            }
+
+            // Experience descriptions scoring
+            const expWithDescriptions = cvData.experience.filter(exp => exp.description && exp.description.length > 20).length;
+            if (expWithDescriptions >= validExperience) score += 10;
+            else tips.push('Add detailed descriptions for all experiences');
+
+            // Update UI
+            const scoreElement = document.getElementById('atsScore');
+            scoreElement.textContent = score;
+            
+            // Update score color
+            scoreElement.className = 'score-value';
+            if (score >= 80) scoreElement.classList.add('score-good');
+            else if (score >= 60) scoreElement.classList.add('score-medium');
+            else scoreElement.classList.add('score-poor');
+
+            // Update tips
+            const tipsElement = document.getElementById('optimizationTips');
+            if (tips.length > 0) {
+                tipsElement.innerHTML = tips.map(tip => `<li>${tip}</li>`).join('');
+            } else {
+                tipsElement.innerHTML = '<li>Great! Your CV is well-optimized for ATS systems.</li>';
+            }
+        }
+
+        // Export as PDF (using print functionality)
+        function exportPDF() {
+            window.print();
+        }
+
+        // Export as plain text
+        function exportText() {
+            let text = '';
+            
+            // Personal info
+            text += `${cvData.personal.fullName || 'Your Name'}\n`;
+            text += `${cvData.personal.jobTitle || 'Job Title'}\n\n`;
+            
+            if (cvData.personal.email) text += `Email: ${cvData.personal.email}\n`;
+            if (cvData.personal.phone) text += `Phone: ${cvData.personal.phone}\n`;
+            if (cvData.personal.location) text += `Location: ${cvData.personal.location}\n`;
+            if (cvData.personal.linkedin) text += `LinkedIn: ${cvData.personal.linkedin}\n`;
+            
+            text += '\n';
+            
+            // Summary
+            if (cvData.personal.summary) {
+                text += 'PROFESSIONAL SUMMARY\n';
+                text += `${cvData.personal.summary}\n\n`;
+            }
+            
+            // Experience
+            if (cvData.experience.length > 0) {
+                text += 'WORK EXPERIENCE\n';
+                cvData.experience.forEach(exp => {
+                    if (exp.company || exp.position) {
+                        text += `${exp.position || 'Position'} - ${exp.company || 'Company'}\n`;
+                        const startDate = exp.startDate ? formatDate(exp.startDate) : '';
+                        const endDate = exp.endDate ? formatDate(exp.endDate) : 'Present';
+                        text += `${startDate} to ${endDate}\n`;
+                        if (exp.description) text += `${exp.description}\n`;
+                        text += '\n';
+                    }
+                });
+            }
+            
+            // Education
+            if (cvData.education.length > 0) {
+                text += 'EDUCATION\n';
+                cvData.education.forEach(edu => {
+                    if (edu.school || edu.degree) {
+                        text += `${edu.degree || 'Degree'} - ${edu.school || 'School'}\n`;
+                        const startDate = edu.startDate ? formatDate(edu.startDate) : '';
+                        const endDate = edu.endDate ? formatDate(edu.endDate) : '';
+                        if (startDate || endDate) text += `${startDate} to ${endDate}\n`;
+                        if (edu.details) text += `${edu.details}\n`;
+                        text += '\n';
+                    }
+                });
+            }
+            
+            // Skills
+            if (cvData.personal.skills) {
+                text += 'SKILLS\n';
+                text += cvData.personal.skills;
+            }
+            
+            // Create and download file
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${cvData.personal.fullName || 'Resume'}_ATS.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Load sample data
+        function loadSample() {
+            // Fill personal information
+            document.getElementById('fullName').value = 'Sarah Johnson';
+            document.getElementById('jobTitle').value = 'Senior Software Engineer';
+            document.getElementById('email').value = 'sarah.johnson@email.com';
+            document.getElementById('phone').value = '+1 (555) 123-4567';
+            document.getElementById('location').value = 'San Francisco, CA';
+            document.getElementById('linkedin').value = 'https://linkedin.com/in/sarahjohnson';
+            document.getElementById('summary').value = 'Results-driven Senior Software Engineer with 8+ years of experience developing scalable web applications and leading cross-functional teams. Expertise in full-stack development, cloud architecture, and agile methodologies. Proven track record of delivering high-quality software solutions that improve user experience and business outcomes.';
+            document.getElementById('skills').value = 'JavaScript, TypeScript, React, Node.js, Python, AWS, Docker, Kubernetes, PostgreSQL, MongoDB, Git, CI/CD, Agile, Test-Driven Development, System Design';
+
+            // Update data object
+            cvData.personal = {
+                fullName: 'Sarah Johnson',
+                jobTitle: 'Senior Software Engineer',
+                email: 'sarah.johnson@email.com',
+                phone: '+1 (555) 123-4567',
+                location: 'San Francisco, CA',
+                linkedin: 'https://linkedin.com/in/sarahjohnson',
+                summary: 'Results-driven Senior Software Engineer with 8+ years of experience developing scalable web applications and leading cross-functional teams. Expertise in full-stack development, cloud architecture, and agile methodologies. Proven track record of delivering high-quality software solutions that improve user experience and business outcomes.',
+                skills: 'JavaScript, TypeScript, React, Node.js, Python, AWS, Docker, Kubernetes, PostgreSQL, MongoDB, Git, CI/CD, Agile, Test-Driven Development, System Design'
+            };
+
+            // Clear existing experience and education
+            cvData.experience = [];
+            cvData.education = [];
+            document.getElementById('experienceList').innerHTML = '';
+            document.getElementById('educationList').innerHTML = '';
+
+            // Add sample experience
+            addExperience();
+            const exp1 = cvData.experience[0];
+            exp1.company = 'TechCorp Inc.';
+            exp1.position = 'Senior Software Engineer';
+            exp1.startDate = '2020-03';
+            exp1.endDate = '';
+            exp1.description = '• Led development of microservices architecture serving 10M+ users\n• Reduced application load time by 40% through performance optimization\n• Mentored 5 junior developers and conducted technical interviews\n• Implemented CI/CD pipelines reducing deployment time by 60%';
+
+            addExperience();
+            const exp2 = cvData.experience[1];
+            exp2.company = 'StartupXYZ';
+            exp2.position = 'Full Stack Developer';
+            exp2.startDate = '2018-01';
+            exp2.endDate = '2020-02';
+            exp2.description = '• Built responsive web applications using React and Node.js\n• Designed and implemented RESTful APIs with 99.9% uptime\n• Collaborated with UX team to improve user engagement by 35%\n• Integrated third-party payment systems and analytics tools';
+
+            // Add sample education
+            addEducation();
+            const edu1 = cvData.education[0];
+            edu1.school = 'University of California, Berkeley';
+            edu1.degree = 'Bachelor of Science in Computer Science';
+            edu1.startDate = '2014-08';
+            edu1.endDate = '2017-12';
+            edu1.details = 'GPA: 3.8/4.0, Summa Cum Laude, Dean\'s List';
+
+            // Update form fields with sample data
+            setTimeout(() => {
+                const expInputs = document.querySelectorAll('#experienceList input, #experienceList textarea');
+                expInputs[0].value = exp1.company;
+                expInputs[1].value = exp1.position;
+                expInputs[2].value = exp1.startDate;
+                expInputs[3].value = exp1.endDate;
+                expInputs[4].value = exp1.description;
+                expInputs[5].value = exp2.company;
+                expInputs[6].value = exp2.position;
+                expInputs[7].value = exp2.startDate;
+                expInputs[8].value = exp2.endDate;
+                expInputs[9].value = exp2.description;
+
+                const eduInputs = document.querySelectorAll('#educationList input, #educationList textarea');
+                eduInputs[0].value = edu1.school;
+                eduInputs[1].value = edu1.degree;
+                eduInputs[2].value = edu1.startDate;
+                eduInputs[3].value = edu1.endDate;
+                eduInputs[4].value = edu1.details;
+
+                updatePreview();
+                calculateATSScore();
+            }, 100);
+        }
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
